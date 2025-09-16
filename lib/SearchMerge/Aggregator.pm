@@ -1,59 +1,107 @@
 package SearchMerge::Aggregator;
-use Moo;                # Lightweight object system
-use Mojo::UserAgent;    # For making HTTP requests
-use Mojo::Promise;      # For handling asynchronous operations
-use Data::Dumper qw( Dumper );          # For debugging output
+use Modern::Perl;
+use Moo;
+use Mojo::UserAgent;
+use Mojo::Promise;
+use Data::Dumper ();
+use SearchMerge::Parser;
 
-# Attribute to hold the user agent instance
 has ua => (
-  is => 'lazy', # Lazily built attribute
-  default => sub { Mojo::UserAgent->new }, # Default value is a new Mojo::UserAgent
+    is      => 'lazy',
+    default => sub { Mojo::UserAgent->new },
+);
+
+has parser => (
+    is      => 'lazy',
+    default => sub { SearchMerge::Parser->new },
+);
+
+my @sources = (
+    {
+        name => 'Wikipedia',
+        url  =>
+'https://en.wikipedia.org/w/api.php?action=opensearch&limit=1&format=json&search='
+    },
+    {
+        name => 'OpenLibrary',
+        url  => 'https://openlibrary.org/search.json?limit=2&q='
+    },
+
+    # {
+    #     name => 'Reddit',
+    #     url  => 'https://www.reddit.com/search.json?limit=2&q='
+    # },
+    # {
+    #     name => 'Archive.org',
+    #     url  => 'https://archive.org/advancedsearch.php?q=',
+    # },
+    # {
+    #     name => 'Github',
+    #     url  => 'https://api.github.com/search/repositories?q='
+    # },
 );
 
 sub aggregate {
-  my ($self, $query) = @_; # Accept a list of URLs to fetch
+    my ( $self, $query ) = @_;
 
-  my @sources = (
-    {
-      name => 'Wikipedia',
-      url  => 'https://en.wikipedia.org/w/api.php?action=opensearch&limit=2&format=json&search=' . $query,
-    },
-    {
-      name => 'Reddit',
-      url  => 'https://www.reddit.com/search.json?limit=2q=' . $query,
-    }
-  );
-
-  my @promises;
-  for my $source (@sources) {
-    my $promise = $self->ua->get_p($source->{url});
-    push @promises, $promise;
-  }
-
-  my @results;
-  # Use a closure to capture the results from the promise
-  my $results_promise = Mojo::Promise->all(@promises)->then(
-    sub {
-      my @transactions = @_;
-      # --- DEBUG LINE HERE ---
-      print Dumper(\@transactions);
-      # -----------------------
-
-      # Now process the transactions inside the closure
-      for my $tx (@transactions) {
-        if ($tx->is_success) {
-          push @results, { data => 'parsed data', source => $tx->req->url->to_string };
-        } else {
-          warn "Failed to fetch from ", $tx->req->url, ": ", $tx->error->{message};
+    my @sources_requests = map {
+        {
+            name     => $_->{name},
+            url      => $_->{url},
+            full_url => $_->{url} . Mojo::Util::url_escape($query),
         }
-      }
-    }
-  );
+    } @sources;
 
-  # This will block until the promise chain is complete
-  $results_promise->wait;
+    my @promises = map {
+        my $source = $_;
+        say "Creating promise for ", $source->{name}, "";
 
-  return @results; # Return the aggregated results
+        # Store source info with the promise result
+        $self->ua->get_p( $source->{full_url} )->then(
+            sub {
+                my $tx = shift;
+                return {
+                    source => $source->{name},
+                    tx     => $tx,
+                };
+            }
+        );
+    } @sources_requests;
+    say "Created ", scalar(@promises), " promises";
+
+    my @results;
+
+    Mojo::Promise->all(@promises)->then(
+        sub {
+            my @wrapped_results = @_;
+
+            for my $wrapped (@wrapped_results) {
+                my $result = $wrapped->[0];
+                my $source = $result->{source};
+                my $tx     = $result->{tx};
+
+                if ( $tx && $tx->res && $tx->res->is_success ) {
+                    say "Query to ", $tx->req->url, " succeeded";
+                    my $parsed =
+                      $self->parser->parse_source( $source, $tx->res );
+                    push @results, @$parsed;
+                }
+                else {
+                    say "Query to ", $tx->req->url, " failed";
+                    if ( $tx && $tx->error ) {
+                        warn "  Error: ", $tx->error->{message}, "";
+                    }
+                }
+            }
+        }
+    )->catch(
+        sub {
+            my $err = shift;
+            warn "A promise was rejected: $err";
+        }
+    )->wait;
+
+    return @results;
 }
 
 1;

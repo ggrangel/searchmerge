@@ -10,7 +10,7 @@ use Data::Dumper qw( Dumper ); # A great module for printing complex data struct
 my $aggregator = SearchMerge::Aggregator->new;
 
 # Define a test query
-my $query = 'Perl programming';
+my $query = 'Perl';
 
 # Call the aggregate method
 print "Aggregating results for: '$query'...\n";
