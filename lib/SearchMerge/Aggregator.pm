@@ -20,18 +20,18 @@ has parser => (
 );
 
 has cache => (
-  is => 'lazy',
-  default => sub  { SearchMerge::Cache -> new },
+    is      => 'lazy',
+    default => sub { SearchMerge::Cache->new },
 );
 
 has rate_limiter => (
-  is => 'lazy',
-  default => sub { SearchMerge::RateLimiter-> new },
+    is      => 'lazy',
+    default => sub { SearchMerge::RateLimiter->new },
 );
 
 has ranker => (
-  is => 'lazy',
-  default => sub { SearchMerge::Ranker->new },
+    is      => 'lazy',
+    default => sub { SearchMerge::Ranker->new },
 );
 
 my @sources = (
@@ -62,11 +62,12 @@ my @sources = (
 sub aggregate {
     my ( $self, $query ) = @_;
 
-    if (my $cached = $self->cache->get($query)) {
-      say "Cache hit for $query";
-      return $cached;
-    } else {
-      say "Cache miss for $query";
+    if ( my $cached = $self->cache->get($query) ) {
+        say "Cache hit for $query";
+        return $cached;
+    }
+    else {
+        say "Cache miss for $query";
     }
 
     my @sources_requests = map {
@@ -80,7 +81,7 @@ sub aggregate {
     my @promises = map {
         my $source = $_;
 
-        $self->rate_limiter->wait_if_needed($source->{name});
+        $self->rate_limiter->wait_if_needed( $source->{name} );
 
         say "Creating promise for ", $source->{name}, "";
 
@@ -99,40 +100,27 @@ sub aggregate {
 
     my @results;
 
-    Mojo::Promise->all(@promises)->then(
-        sub {
-            my @wrapped_results = @_;
+    for my $source (@sources_requests) {
+        say "Scheduling request to ", $source->{name}, " at ",
+          $source->{full_url};
 
-            for my $wrapped (@wrapped_results) {
-                my $result = $wrapped->[0];
-                my $source = $result->{source};
-                my $tx     = $result->{tx};
+        my $tx = $self->ua->get( $source->{full_url} );
 
-                if ( $tx && $tx->res && $tx->res->is_success ) {
-                    say "Query to ", $tx->req->url, " succeeded";
-                    my $parsed =
-                      $self->parser->parse_source( $source, $tx->res );
-                    push @results, @$parsed;
-                }
-                else {
-                    say "Query to ", $tx->req->url, " failed";
-                    if ( $tx && $tx->error ) {
-                        warn "  Error: ", $tx->error->{message}, "";
-                    }
-                }
-            }
+        if ( $tx->res && $tx->res->is_success ) {
+            say "Query to ", $tx->req->url, " succeeded";
+            my $parsed =
+              $self->parser->parse_source( $source->{name}, $tx->res );
+            push @results, @$parsed;
         }
-    )->catch(
-        sub {
-            my $err = shift;
-            warn "A promise was rejected: $err";
+        else {
+            say "Query to ", $tx->req->url, " failed";
         }
-    )->wait;
+    }
 
-    my $ranked = $self->ranker->rank(\@results, $query);
+    say "DEBUG: After wait, results count: ", scalar(@results);
 
-    $self->cache->set($query, $ranked);
-
+    my $ranked = $self->ranker->rank( \@results, $query );
+    $self->cache->set( $query, $ranked );
     return $ranked;
 }
 
