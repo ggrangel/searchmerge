@@ -6,6 +6,7 @@ use Mojo::Promise;
 use Data::Dumper ();
 use SearchMerge::Cache;
 use SearchMerge::Parser;
+use SearchMerge::RateLimiter;
 
 has ua => (
     is      => 'lazy',
@@ -20,6 +21,11 @@ has parser => (
 has cache => (
   is => 'lazy',
   default => sub  { SearchMerge::Cache -> new },
+);
+
+has rate_limiter => (
+  is => 'lazy',
+  default => sub { SearchMerge::RateLimiter-> new },
 );
 
 my @sources = (
@@ -67,6 +73,9 @@ sub aggregate {
 
     my @promises = map {
         my $source = $_;
+
+        $self->rate_limiter->wait_if_needed($source->{name});
+
         say "Creating promise for ", $source->{name}, "";
 
         # Store source info with the promise result

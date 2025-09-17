@@ -7,3 +7,4 @@ requires 'JSON::XS';
 requires 'Modern::Perl';
 requires 'Mojolicious';
 requires 'Moo';
+requires 'Time::HiRes';
