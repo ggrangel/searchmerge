@@ -4,6 +4,7 @@ use Moo;
 use Mojo::UserAgent;
 use Mojo::Promise;
 use Data::Dumper ();
+use SearchMerge::Cache;
 use SearchMerge::Parser;
 
 has ua => (
@@ -16,11 +17,16 @@ has parser => (
     default => sub { SearchMerge::Parser->new },
 );
 
+has cache => (
+  is => 'lazy',
+  default => sub  { SearchMerge::Cache -> new },
+);
+
 my @sources = (
     {
         name => 'Wikipedia',
         url  =>
-'https://en.wikipedia.org/w/api.php?action=opensearch&limit=1&format=json&search='
+'https://en.wikipedia.org/w/api.php?action=opensearch&limit=2&format=json&search='
     },
     {
         name => 'OpenLibrary',
@@ -43,6 +49,13 @@ my @sources = (
 
 sub aggregate {
     my ( $self, $query ) = @_;
+
+    if (my $cached = $self->cache->get($query)) {
+      say "Cache hit for $query";
+      return $cached;
+    } else {
+      say "Cache miss for $query";
+    }
 
     my @sources_requests = map {
         {
@@ -101,7 +114,8 @@ sub aggregate {
         }
     )->wait;
 
-    return @results;
+    $self->cache->set($query, \@results);
+    return \@results;
 }
 
 1;

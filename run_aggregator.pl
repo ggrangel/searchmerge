@@ -21,5 +21,12 @@ print "----------------------------------\n";
 print "Aggregated Results:\n";
 print Dumper(\@results); # The backslash creates a reference to the array
 
+# Print the results using Data::Dumper for easy inspection
+print "----------------------------------\n";
+print "Should hit the cache\n";
+my @results = $aggregator->aggregate($query);
+print Dumper(\@results); # The backslash creates a reference to the array
+
+
 print "----------------------------------\n";
 print "Done.\n";

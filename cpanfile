@@ -1,4 +1,6 @@
+requires 'CHI';
 requires 'Data::Dumper';
+requires 'Digest::SHA';
 requires 'Future::AsyncAwait';
 requires 'IO::Socket::SSL';
 requires 'JSON::XS';
