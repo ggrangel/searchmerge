@@ -7,6 +7,7 @@ use Data::Dumper ();
 use SearchMerge::Cache;
 use SearchMerge::Parser;
 use SearchMerge::RateLimiter;
+use SearchMerge::Ranker;
 
 has ua => (
     is      => 'lazy',
@@ -26,6 +27,11 @@ has cache => (
 has rate_limiter => (
   is => 'lazy',
   default => sub { SearchMerge::RateLimiter-> new },
+);
+
+has ranker => (
+  is => 'lazy',
+  default => sub { SearchMerge::Ranker->new },
 );
 
 my @sources = (
@@ -123,8 +129,11 @@ sub aggregate {
         }
     )->wait;
 
-    $self->cache->set($query, \@results);
-    return \@results;
+    my $ranked = $self->ranker->rank(\@results, $query);
+
+    $self->cache->set($query, $ranked);
+
+    return $ranked;
 }
 
 1;
