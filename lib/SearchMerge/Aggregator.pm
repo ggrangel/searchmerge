@@ -44,7 +44,7 @@ has ranker => (
     default => sub { SearchMerge::Ranker->new },
 );
 
-use constant SOURCES = (
+use constant SOURCES => [
     {
         name => 'Wikipedia',
         url  =>
@@ -58,7 +58,7 @@ use constant SOURCES = (
         name => 'Reddit',
         url  => 'https://www.reddit.com/search.json?limit=2&q='
     },
-);
+];
 
 sub aggregate {
     my ( $self, $query ) = @_;
@@ -77,7 +77,7 @@ sub aggregate {
             url      => $_->{url},
             full_url => $_->{url} . Mojo::Util::url_escape($query),
         }
-    } SOURCES;
+    } @{ SOURCES() };
 
     my @results;
     for my $source (@sources_requests) {
