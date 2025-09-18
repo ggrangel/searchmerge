@@ -3,31 +3,35 @@ use Modern::Perl;
 use Moo;
 use Mojo::UserAgent;
 use Mojo::Promise;
-use Data::Dumper ();
 use SearchMerge::Cache;
 use SearchMerge::Parser;
 use SearchMerge::Ranker;
 use SearchMerge::Role::RateLimiter;
 use SearchMerge::RateLimiter::MinimumInterval;
-use Types::Standard qw( ConsumerOf );
+use Types::Standard qw( ConsumerOf InstanceOf );
 
 has ua => (
-    is      => 'lazy',
+    is      => 'ro',
+    lazy    => 1,
+    isa     => InstanceOf ['Mojo::UserAgent'],
     default => sub { Mojo::UserAgent->new },
 );
 
 has parser => (
-    is      => 'lazy',
+    is      => 'ro',
+    lazy    => 1,
     default => sub { SearchMerge::Parser->new },
 );
 
 has cache => (
-    is      => 'lazy',
+    is      => 'ro',
+    lazy    => 1,
     default => sub { SearchMerge::Cache->new },
 );
 
 has rate_limiter => (
     is      => 'ro',
+    lazy    => 1,
     isa     => ConsumerOf ['SearchMerge::Role::RateLimiter'],
     default => sub {
         return SearchMerge::RateLimiter::MinimumInterval->new;
@@ -35,11 +39,12 @@ has rate_limiter => (
 );
 
 has ranker => (
-    is      => 'lazy',
+    is      => 'ro',
+    lazy    => 1,
     default => sub { SearchMerge::Ranker->new },
 );
 
-my @sources = (
+use constant SOURCES = (
     {
         name => 'Wikipedia',
         url  =>
@@ -72,7 +77,7 @@ sub aggregate {
             url      => $_->{url},
             full_url => $_->{url} . Mojo::Util::url_escape($query),
         }
-    } @sources;
+    } SOURCES;
 
     my @results;
     for my $source (@sources_requests) {
@@ -91,10 +96,12 @@ sub aggregate {
         else {
             say "Query to ", $tx->req->url, " failed";
             if ( $tx->error ) {
-                say "Error: ", $tx->error->{message};
+                warn "Error: " . $tx->error->{message};
             }
         }
     }
+
+    return [] unless @results;
 
     my $ranked = $self->ranker->rank( \@results, $query );
     $self->cache->set( $query, $ranked );
