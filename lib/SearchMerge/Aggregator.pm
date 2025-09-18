@@ -9,6 +9,8 @@ use SearchMerge::Parser;
 use SearchMerge::RateLimiter;
 use SearchMerge::Ranker;
 
+has verbose => ( is => 'ro', default => sub { 1 } );
+
 has ua => (
     is      => 'lazy',
     default => sub { Mojo::UserAgent->new },
@@ -78,31 +80,11 @@ sub aggregate {
         }
     } @sources;
 
-    my @promises = map {
-        my $source = $_;
+    my @results;
+    for my $source (@sources_requests) {
+        say "Fetching from ", $source->{name}, " at ", $source->{full_url};
 
         $self->rate_limiter->wait_if_needed( $source->{name} );
-
-        say "Creating promise for ", $source->{name}, "";
-
-        # Store source info with the promise result
-        $self->ua->get_p( $source->{full_url} )->then(
-            sub {
-                my $tx = shift;
-                return {
-                    source => $source->{name},
-                    tx     => $tx,
-                };
-            }
-        );
-    } @sources_requests;
-    say "Created ", scalar(@promises), " promises";
-
-    my @results;
-
-    for my $source (@sources_requests) {
-        say "Scheduling request to ", $source->{name}, " at ",
-          $source->{full_url};
 
         my $tx = $self->ua->get( $source->{full_url} );
 
@@ -114,10 +96,11 @@ sub aggregate {
         }
         else {
             say "Query to ", $tx->req->url, " failed";
+            if ( $tx->error ) {
+                say "Error: ", $tx->error->{message};
+            }
         }
     }
-
-    say "DEBUG: After wait, results count: ", scalar(@results);
 
     my $ranked = $self->ranker->rank( \@results, $query );
     $self->cache->set( $query, $ranked );
