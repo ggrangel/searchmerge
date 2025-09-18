@@ -20,12 +20,12 @@ has limits => (
     is      => 'ro',
     default => sub {
         {
-            Wikipedia   => { max => 200, per => 1 },   # 200 requests per second
-            OpenLibrary => { max => 100, per => 1 },   # 100 requests per second
+            Wikipedia   => { max => 2, per => 1 },    # 1 request every 0.5s
+            OpenLibrary => { max => 1, per => 1 },    # 1 request every 1s
+            Reddit      => { max => 1, per => 2 },    # 1 request every 2s
         }
     }
 );
-1;
 
 has last_request => (
     is      => 'rw',

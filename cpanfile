@@ -7,4 +7,6 @@ requires 'JSON::XS';
 requires 'Modern::Perl';
 requires 'Mojolicious';
 requires 'Moo';
+requires 'Test::MockObject';
+requires 'Test::MockTime';
 requires 'Time::HiRes';

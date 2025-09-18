@@ -88,36 +88,36 @@ sub parse_openlibrary {
     };
 }
 
-# sub parse_reddit {
-#     my ( $self, $response ) = @_;
-#
-#     try {
-#         my $data = decode_json( $response->body );
-#         my @results;
-#
-#         for my $child ( @{ $data->{data}{children} || [] } ) {
-#             my $post = $child->{data};
-#             push @results,
-#               {
-#                 title    => $post->{title},
-#                 snippet  => substr( $post->{selftext} || '', 0, 200 ),
-#                 url      => "https://reddit.com" . $post->{permalink},
-#                 source   => 'Reddit',
-#                 score    => 0,
-#                 metadata => {
-#                     upvotes   => $post->{score},
-#                     comments  => $post->{num_comments},
-#                     subreddit => $post->{subreddit},
-#                 }
-#               };
-#         }
-#         return \@results;
-#     }
-#     catch {
-#         warn "Failed to parse Reddit response: $_";
-#         return [];
-#     };
-# }
+sub parse_reddit {
+    my ( $self, $response ) = @_;
+
+    try {
+        my $data = decode_json( $response->body );
+        my @results;
+
+        for my $child ( @{ $data->{data}{children} || [] } ) {
+            my $post = $child->{data};
+            push @results,
+              {
+                title    => $post->{title},
+                snippet  => substr( $post->{selftext} || '', 0, 200 ),
+                url      => "https://reddit.com" . $post->{permalink},
+                source   => 'Reddit',
+                score    => 0,
+                metadata => {
+                    upvotes   => $post->{score},
+                    comments  => $post->{num_comments},
+                    subreddit => $post->{subreddit},
+                }
+              };
+        }
+        return \@results;
+    }
+    catch {
+        warn "Failed to parse Reddit response: $_";
+        return [];
+    };
+}
 
 1;
 

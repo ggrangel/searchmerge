@@ -49,19 +49,10 @@ my @sources = (
         name => 'OpenLibrary',
         url  => 'https://openlibrary.org/search.json?limit=2&q='
     },
-
-    # {
-    #     name => 'Reddit',
-    #     url  => 'https://www.reddit.com/search.json?limit=2&q='
-    # },
-    # {
-    #     name => 'Archive.org',
-    #     url  => 'https://archive.org/advancedsearch.php?q=',
-    # },
-    # {
-    #     name => 'Github',
-    #     url  => 'https://api.github.com/search/repositories?q='
-    # },
+    {
+        name => 'Reddit',
+        url  => 'https://www.reddit.com/search.json?limit=2&q='
+    },
 );
 
 sub aggregate {

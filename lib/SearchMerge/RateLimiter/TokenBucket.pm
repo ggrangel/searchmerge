@@ -4,9 +4,9 @@ use Time::HiRes ();
 
 with 'SearchMerge::Role::RateLimiter';
 
-has 'tokens'      => ( is => 'rw', default => 10 );
-has 'max_tokens'  => ( is => 'ro', default => 10 );
-has 'refill_rate' => ( is => 'ro', default => 1 );
+has 'tokens'      => ( is => 'rw', default => 2 );    # start with 2 tokens
+has 'max_tokens'  => ( is => 'ro', default => 2 );    # cap at 2
+has 'refill_rate' => ( is => 'ro', default => 1 );    # 1 token per second
 has 'last_refill' => ( is => 'rw', default => sub { time() } );
 
 sub wait_if_needed {
