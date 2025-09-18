@@ -6,10 +6,10 @@ use Mojo::Promise;
 use Data::Dumper ();
 use SearchMerge::Cache;
 use SearchMerge::Parser;
-use SearchMerge::RateLimiter;
 use SearchMerge::Ranker;
-
-has verbose => ( is => 'ro', default => sub { 1 } );
+use SearchMerge::Role::RateLimiter;
+use SearchMerge::RateLimiter::MinimumInterval;
+use Types::Standard qw( ConsumerOf );
 
 has ua => (
     is      => 'lazy',
@@ -27,8 +27,11 @@ has cache => (
 );
 
 has rate_limiter => (
-    is      => 'lazy',
-    default => sub { SearchMerge::RateLimiter->new },
+    is      => 'ro',
+    isa     => ConsumerOf ['SearchMerge::Role::RateLimiter'],
+    default => sub {
+        return SearchMerge::RateLimiter::MinimumInterval->new;
+    },
 );
 
 has ranker => (

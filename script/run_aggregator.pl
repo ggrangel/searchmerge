@@ -1,14 +1,20 @@
 #!/usr/bin/perl
 use strict;
 use warnings;
-use lib 'lib';    # This tells Perl where to find your modules
+use lib 'lib';    # Adjust the path to your lib directory if needed
 
+use SearchMerge::RateLimiter::TokenBucket;
 use SearchMerge::Aggregator;
-use Data::Dumper qw( Dumper )
-  ;               # A great module for printing complex data structures
+use Data::Dumper qw( Dumper );
 
 # Create a new instance of our Aggregator class
-my $aggregator = SearchMerge::Aggregator->new;
+my $aggregator = SearchMerge::Aggregator->new(
+    rate_limiter => SearchMerge::RateLimiter::TokenBucket->new(
+        tokens      => 5,
+        max_tokens  => 5,
+        refill_rate => 1
+    )
+);
 
 # Define a test query
 my $query = 'Perl';
