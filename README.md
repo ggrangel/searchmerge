@@ -1,10 +1,9 @@
 # SearchMerge
 
-SearchMerge is a toy project built to learn modern Perl.
-It fetches results from multiple sources, merges them, parses and ranks them, and then exposes the results through both a CLI and a simple web server.
+SearchMerge is a toy project built to learn modern Perl. It's a very simple web search engine.
+Given a query, it fetches results from multiple sources, merges them, parses and ranks them, and then exposes the results through both a CLI and a simple web server.
 
-This is not production-ready software — it exists mainly for fun, experiments, and practicing Perl patterns (roles, constants, testing, etc.).
-
+This is not production-ready software, it exists mainly for fun, experiments, and practicing Perl patterns.
 ---
 
 ## Project Structure
@@ -51,7 +50,7 @@ perl script/cli.pl "search query"
 
 ```bash
 perl script/server.pl daemon
-curl "http://localhost:3000/search?q=search-query" | jq .
+curl "http://localhost:3000/search?q=search%20query"
 ```
 
 ---
@@ -62,7 +61,7 @@ curl "http://localhost:3000/search?q=search-query" | jq .
 * Parser: normalizes source results
 * Ranker: orders results based on simple heuristics
 * Cache: avoids re-fetching repeated queries
-* Rate Limiting: two strategies implemented (minimum interval, token bucket)
+* Rate Limiting: two strategies implemented to learn dependency injection (minimum interval, token bucket)
 * Web & CLI frontends
 * Tests: basic unit tests for cache, parser, and ranker
 
