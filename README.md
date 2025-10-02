@@ -1,9 +1,9 @@
 # SearchMerge
 
-SearchMerge is a toy project built to learn modern Perl. It's a very simple web search engine.
+SearchMerge is a project built to learn modern Perl. It's a very simple web search engine.
 Given a query, it fetches results from multiple sources, merges them, parses and ranks them, and then exposes the results through both a CLI and a simple web server.
 
-This is not production-ready software, it exists mainly for fun, experiments, and practicing Perl patterns.
+This is not production-ready software, it exists mainly for experiments, and practicing Perl patterns.
 ---
 
 ## Project Structure
